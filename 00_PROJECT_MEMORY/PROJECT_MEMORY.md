@@ -2,30 +2,26 @@
 
 ## 1. 项目目标
 
-HH520 是一个以网页结构化数据为基础的足球预测与研究系统。核心目标：
+HH520 是一个以 HH520 结构化网页数据为基础的足球预测与研究系统。核心目标：
 
 - 手机/电脑一句命令完成预测。
 - 尽量减少复杂基础设施。
 - 正式预测链稳定、可复现。
 - Research 与 Stable 完全隔离。
-- 通过历史验证和前向验证提高最终决策质量。
+- 通过历史验证、压力验证和前向验证提高最终决策质量。
 - 不依赖单个 ChatGPT 账号记忆。
 
 ## 2. 当前正式版本
 
-**HH520 Stable V2.1**
+**HH520 Stable V3.5.1**
 
-代码仓库：
+代码仓库：`ltaln/HH520-stable-V2`
 
-`ltaln/HH520-stable-V2`
+知识仓库：`ltaln/HH520-Knowledge-Base`
 
-知识仓库：
+## 3. 当前正式数据源
 
-`ltaln/HH520-Knowledge-Base`
-
-## 3. 当前数据源
-
-正式数据源已从 10023s 迁移到 **10027s**。
+正式数据源：**10027s**
 
 固定形式：
 
@@ -39,124 +35,93 @@ https://www.hh520.com/tx/10027s.php
 
 Firecrawl 是正式采集层。
 
-## 4. 10027s 数据语义
-
-基础表：
-- 比赛身份
-- 联赛
-- 时间
-- 1X2赔率
-- EV / Kelly / 建议字段
-- 半场比分
-- 全场比分
-
-其中半场比分、全场比分是 **真实赛果标签**。
-
-融合表：
-- 单选
-- 融合真实概率
-- 半全场
-- structure
-- consistency
-- pattern
-- rating
-- risk
-- handicap
-- advantage / draw 等结构化因素
-
-研究发现：
-- 10027s 页面没有稳定可确认的“原始预测比分”和“原始总进球”字段。
-- 比分/总进球如由模型推导，必须标注 RESEARCH_DERIVED 或模型输出。
-
-## 5. 正式架构
+## 4. Stable V3.5.1 正式架构
 
 ```
 10027s
 ↓
 Probability Layer
 ↓
-Value Layer
+Market Failure Detector
 ↓
-Decision Filter V2
+Formal Draw Resolver
 ↓
-GPT
+Decision Filter V3.5.1
 ↓
-Prediction Output
+Independent Score Layer
+↓
+Independent HT/FT Layer
+↓
+Consistency Layer
+↓
+Locked Prediction
+↓
+Strict 6-column Output
 ```
 
-### Probability Layer
-优先使用 10027s 页面融合概率；没有完整页面概率时使用去水 1X2 市场概率。
+## 5. Formal Draw Resolver
 
-### Value Layer
-保留 EV / Kelly / 页面信号，但不允许单独改变预测方向。
+用途：解决原模型极少正式输出平局的问题。
 
-### Decision Filter V2
-基于 2026-08 Discovery + 2026-09 Historical Shadow 的跨时间窗证据进行最终放行。
+正式模型：
 
-### GPT
-负责最终预测表达、比分/半全场/总进球生成与一致性检查；不得绕过 PASS。
+`CROSS_FIT_LOGISTIC_V1_FORMAL`
 
-## 6. Stable / Research 隔离
+规则：
+- 仅低置信均衡区
+- `draw_score >= 0.38`
+- `pmax <= 0.45`
+- 永不覆盖 `>=55%` 已授权主/客方向
 
-Stable：
-- 正式预测
-- 不允许 Research 自动修改
-- 不自动训练
+验证：
+- Dev1 61.5%
+- Dev2 41.4%
+- Sep Stress 55.6%
 
-Research：
-- 只读 Stable
-- 可以反推隐藏模型
-- 可以生成 Candidate Rule
-- Candidate 不等于 Stable Rule
+## 6. HT/FT
 
-晋级流程：
+正式模型：
 
-```
-Discovery
-→ Candidate Rule
-→ Historical Shadow
-→ Forward Test
-→ Manual Review
-→ Stable Candidate
-```
+`INDEPENDENT_POISSON_SPLIT_HTFT_V3_EXISTING_DATA`
 
-## 7. 研究时间线
+只利用已采集历史半场/全场数据反推。
 
-Canonical chronology：
+冻结参数：
+- Home first-half share = 0.36
+- Away first-half share = 0.44
 
-- History Start：2026-08-01
-- Discovery：2026-08-01 ～ 2026-08-31
-- Historical Shadow：2026-09-01 ～ 2026-09-20
-- Forward：2026-09-21 起
+历史标签：
+- 538 + 592 + 302 = 1432 场
 
-## 8. 关键样本
+正式预测不再采集任何新 Goal Timing 数据。
 
-August Discovery：
-- 403 collected
-- 402 result labels matched
-- WDL 217/402 = 53.98%
-- Score Exact 58/402 = 14.43%
-- Score Top2 101/402 = 25.12%
-- HTFT 132/402 = 32.84%
-- HTFT Top2 190/402 = 47.26%
-- Goals 86/402 = 21.39%
-- 29 Candidate Rules
+## 7. Score
 
-September Historical Shadow：
-- 302/302 matched
-- 29 frozen rules
-- 22 SHADOW_PASS
-- 7 SHADOW_HOLD
+比分保持独立：
+
+`HDA_POISSON_V1`
+
+不再被 FT 方向硬锁，也不被 HT/FT 模板反向锁定。
+
+## 8. 当前关键研究结论
+
+平局：
+- 简单阈值规则在不同窗口不稳定。
+- 最终采用交叉验证 Logistic 高特异性平局覆盖器。
+
+HT/FT：
+- 不需要新增 Goal Timing。
+- 使用已有真实 HT/FT 标签可稳定得到约 32–34% Top1、49–53% Top2 的历史表现。
 
 ## 9. 当前运行偏好
 
-用户偏好：
 - 直接执行，不逐步询问。
 - 输出简洁。
 - 手机/电脑一句命令。
 - 不建立长期数据库。
 - Firecrawl 成本要控制。
 - 已知信息不要反复询问。
+- 遇到问题优先自行验证、修复、反复测试，最终只给结果。
 
 ## 10. 当前知识库职责
 
