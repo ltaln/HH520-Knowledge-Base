@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-09-25 — Stable V3.5.1 Formal Draw + HT/FT Final
+
+- Current formal version: HH520 Stable V3.5.1.
+- Formal draw resolver: CROSS_FIT_LOGISTIC_V1_FORMAL.
+- Draw gate: score >= 0.38 and pmax <= 0.45.
+- Draw validation: Dev1 61.5%, Dev2 41.4%, Sep stress 55.6%.
+- Formal HT/FT model: INDEPENDENT_POISSON_SPLIT_HTFT_V3_EXISTING_DATA.
+- HT/FT historical labels: 1432.
+- Frozen first-half shares: HOME 0.36, AWAY 0.44.
+- No new Goal Timing data is required; timing_used=false.
+- CI run 36093520930 succeeded.
+- E2E run 36093576607 succeeded and returned READY.
+
 ## 2026-09-23 — Stable V3.4
 - Upgraded formal prediction architecture from Stable V2.1 to Stable V3.4.
 - Confirmed HH520 10027s as the only formal production source.
