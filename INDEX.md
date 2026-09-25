@@ -12,10 +12,11 @@
 - [Module Map](01_ARCHITECTURE/MODULE_MAP.md)
 
 ## Model
-- [Stable V2.1](02_MODEL/STABLE_V2_1.md)
+- [Stable V3.5.1](02_MODEL/STABLE_V3_5_1.md)
 - [Probability Layer](02_MODEL/PROBABILITY_LAYER.md)
 - [Value Layer](02_MODEL/VALUE_LAYER.md)
 - [Decision Filter V2](02_MODEL/DECISION_FILTER_V2.md)
+- [Stable V2.1](02_MODEL/STABLE_V2_1.md)
 
 ## Data
 - [10027s Spec](03_DATA_SOURCE/HH520_10027S.md)
